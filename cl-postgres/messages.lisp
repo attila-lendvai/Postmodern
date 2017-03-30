@@ -174,7 +174,8 @@ for binding data for binary long object columns."
                 (declare (inline set-param))
                 (cond ((eq param :null)
                        (set-param 0 0 nil))
-                      ((typep param '(vector (unsigned-byte 8)))
+                      ((typep param '(or (vector (unsigned-byte 8))
+                                         stream-contents))
                        (set-param 1 (length param) param))
                       (t
                        (unless (typep param 'string)
@@ -201,9 +202,24 @@ for binding data for binary long object columns."
           :for size :across param-sizes
           :do (write-int4 socket (if param size -1))
           :do (when param
-                (if (typep param '(vector (unsigned-byte 8)))
-                    (write-sequence param socket)
-                    (enc-write-string param socket))))
+                (etypecase param
+                  ((vector (unsigned-byte 8))
+                   (write-sequence param socket))
+                  (string
+                   (enc-write-string param socket))
+                  (stream-contents
+                   (let ((source (stream-contents-source param))
+                         (start (stream-contents-start param))
+                         (end (stream-contents-end param)))
+                     (etypecase source
+                       (stream
+                        (copy-stream source socket :start start :end end
+                                     :element-type '(unsigned-byte 8)))
+                       ((or string pathname)
+                        (with-open-file (input source :direction :input
+                                               :element-type '(unsigned-byte 8))
+                          (copy-stream input socket :start start :end end
+                                       :element-type '(unsigned-byte 8))))))))))
     (write-uint2 socket n-result-formats)   ;; Number of result formats
     (loop :for format :across result-formats ;; Result formats (text/binary)
           :do (write-uint2 socket (if format 1 0)))))
