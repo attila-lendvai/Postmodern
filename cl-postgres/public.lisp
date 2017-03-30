@@ -288,6 +288,23 @@ apply a row-reader to the result."
       (send-execute (connection-socket connection)
                     name parameters row-reader))))
 
+(defclass stream-contents ()
+  ((source :type (or stream string pathname)
+           :accessor stream-contents-source
+           :initarg :source)
+   (start :type integer
+          :initform 0
+          :initarg :start
+          :accessor stream-contents-start)
+   (end :type (or null integer)
+        :initform nil
+        :initarg :end
+        :accessor stream-contents-end))
+  (:documentation "It can be used as a value in a binding to instruct
+the library to copy the contents of the specified stream directly into
+the socket stream. If a stream source is specified, then it must be
+readable as a binary stream."))
+
 ;; A row-reader that returns a list of (field-name . field-value)
 ;; alist for the returned rows.
 (def-row-reader alist-row-reader (fields)

@@ -18,6 +18,7 @@
            #:database-open-p
            #:close-database
            #:wait-for-notification
+           #:stream-contents
            #:exec-query
            #:prepare-query
            #:unprepare-query
